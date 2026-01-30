@@ -1,0 +1,18 @@
+
+MOV R1,#25
+MOV R2,#25
+
+STMFD R13!,{R1,R2}
+BL LINK
+
+LDR R4,=A
+STR R0,[R4]
+
+SWI 0x011
+
+LINK:
+    LDMFD R13!,{R4,R5}
+    ADD R0,R4,R5
+    MOV PC,LR
+
+A: .WORD

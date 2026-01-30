@@ -1,0 +1,9 @@
+MOV R1,#3
+BL FUNC 
+
+ADD R2,R0,R1
+SWI 0x011
+
+FUNC:
+    MOV R0,#2
+    BX LR

@@ -1,0 +1,38 @@
+.DATA
+A: .WORD 1,0,-1,2,-3,4,-5,0,0,7
+
+.TEXT
+
+LDR R0,=A
+
+MOV R2,#0
+MOV R3,#0
+MOV R4,#0
+MOV R5,#0
+
+LOOP:
+    LDR R1,[R0]
+    CMP R1,#0
+    BEQ ZERO
+    BGT POS
+    BLT NEG
+
+ZERO:
+    ADD R3,R3,#1
+    B NEXT
+POS:
+    ADD R4,R4,#1
+    B NEXT
+NEG:
+    ADD R5,R5,#1
+    B NEXT
+
+NEXT:
+    ADD R0,R0,#4
+    ADD R2,R2,#1
+    CMP R2,#10
+    BNE LOOP
+
+SWI 0x11
+
+.END

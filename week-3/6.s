@@ -1,0 +1,3 @@
+MOV R0,#5
+MOV R2,#1
+RSB R1,R0,R2,LSL #4

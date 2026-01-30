@@ -1,0 +1,5 @@
+LOOP:
+    LDMIA R9!,{R0-R7}
+    STMIA R10!,{R0-R7}
+    CMP R11,#16
+    BNE LOOPc

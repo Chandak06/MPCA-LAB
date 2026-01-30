@@ -1,0 +1,21 @@
+.DATA
+A: .WORD 10,1,2,3,4,5,6,7,8,9
+
+.TEXT
+
+MOV R0,#0
+MOV R2,#0
+
+LDR R1,=A
+LDR R3,[R1]
+ADD R2,R2,R3
+
+ALT:
+    LDR R4,[R1,#8]
+    ADD R1,R1,#8
+    ADD R2,R2,R4
+    ADD R0,R0,#1
+    CMP R0,#4
+    BNE ALT
+
+.END

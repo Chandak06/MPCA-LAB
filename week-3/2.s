@@ -1,0 +1,11 @@
+MOV R0,#1
+MOV R1,#5
+
+FACT:
+    MUL R0,R1,R0
+    SUB R1,R1,#1
+    CMP R1,#1
+
+BNE FACT
+
+SWI 0x11
