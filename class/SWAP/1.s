@@ -1,0 +1,12 @@
+.DATA
+A: .WORD 10
+
+.TEXT
+
+MOV R1,#5
+LDR R2,=A
+LDR R3,[R2]
+STR R1,[R2]
+MOV R1,R3
+
+.END
