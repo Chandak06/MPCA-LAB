@@ -1,0 +1,18 @@
+.DATA
+A: .WORD 0,0,0,0,0,0,0,0,0
+
+.TEXT
+
+MOV R0,#2
+MOV R1,#0
+LDR R2,=A
+
+LOOP:
+    STR R0,[R2],#16
+    ADD R1,R1,#1
+    CMP R1,#3
+    BNE LOOP
+
+SWI 0x11
+
+.END

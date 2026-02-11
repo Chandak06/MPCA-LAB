@@ -1,0 +1,37 @@
+.DATA
+A: .WORD 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16
+B: .WORD 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+
+.TEXT
+
+MOV R0,#16
+MOV R1,#0
+LDR R3,=A
+LDR R4,=B
+
+LOOP:
+    MOV R2,#0
+
+INNERLOOP:
+    LDR R5,[R3],#4
+    STR R5,[R4],#4
+    SUB R0,R0,#1
+    ADD R2,R2,#1
+    CMP R2,#6
+    BNE INNERLOOP
+    
+    ADD R1,R1,#1
+    CMP R1,#2
+    BNE LOOP
+
+REMAINING:
+    LDR R5,[R3],#4
+    STR R5,[R4],#4
+    SUB R0,R0,#1
+    CMP R0,#0
+    BNE REMAINING
+    BEQ EXIT
+EXIT:
+    SWI 0x11
+
+.END

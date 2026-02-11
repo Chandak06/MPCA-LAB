@@ -1,0 +1,24 @@
+.DATA
+A: .WORD 10,20,30,40,50
+B: .WORD 10,20,30,40,50
+
+.TEXT
+
+LDR R0,=A
+LDR R1,=B
+MOV R2,#0
+MOV R5,#0
+MOV R6,#0
+
+LOOP:
+    LDR R3,[R0],#4
+    LDR R4,[R1],#4
+    MUL R5,R3,R4
+    ADD R6,R6,R5
+    ADD R2,R2,#1
+    CMP R2,#5
+    BNE LOOP
+
+SWI 0x11
+
+.END
