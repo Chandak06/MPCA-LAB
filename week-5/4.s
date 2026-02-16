@@ -1,0 +1,30 @@
+.DATA
+MSG: .ASCIZ "ARM MPCA PES"
+COUNT: .WORD 0
+.TEXT
+
+LDR R0,=MSG
+MOV R1,#0
+MOV R2,#1
+
+LOOP:
+    LDRB R3,[R0],#1
+    CMP R3,#0
+    BEQ EXIT
+    CMP R3,#' '
+    BEQ SPACE
+    CMP R2,#1
+    ADDEQ R1,R1,#1
+    MOVEQ R2,#0
+B LOOP
+
+SPACE:
+    MOV R2,#1
+    B LOOP
+
+EXIT: 
+    LDR R3,=COUNT
+    STR R1,[R3]
+    SWI 0x11
+
+.END

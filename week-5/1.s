@@ -1,0 +1,42 @@
+.DATA
+A: .WORD 1,2,3,4,5,6,7,8,9
+SUM: .WORD 0
+
+.TEXT
+
+LDR R8,=A
+MOV R0,#0
+MOV R7,#0
+MOV R3,#3
+LDR R9,=SUM
+
+ROW:
+    CMP R0,#3
+    BEQ EXIT
+    MOV R1,#0
+
+COLUMN:
+        CMP R1,#3
+        BEQ NEXT_ROW
+        BL ADDRESS
+        LDR R6,[R5]
+        ADD R7,R7,R6
+        ADD R1,R1,#1
+        B COLUMN
+
+NEXT_ROW:
+    ADD R0,R0,#1
+    B ROW
+
+ADDRESS:
+    STMFD R13!,{R3,R4,LR}
+    MLA R4,R0,R3,R1
+    MOV R4, R4, LSL #2
+    ADD R5,R4,R8
+    LDMFD R13!,{R3,R4,LR}
+    MOV PC,LR
+
+EXIT:
+    STR R7,[R9]
+    SWI 0x11
+.END

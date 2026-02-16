@@ -1,0 +1,48 @@
+.DATA
+A: .WORD 3,4,1,6,5
+
+.TEXT
+
+LDR R1,=A
+MOV R5,#5
+
+MOV R0,#0
+
+LOOP:
+    CMP R0,#4
+    BEQ EXIT
+
+    MOV R2,#0
+
+INNERLOOP:
+    MOV R4, R5
+    SUB R4, R4, R0
+    SUB R4, R4, #1
+    CMP R2, R4
+    BEQ NEXT_OUTER
+
+    BL ADDRESS
+
+    LDR R6,[R3]
+    LDR R7,[R3,#4]
+    CMP R6,R7
+
+    STRGT R7,[R3]
+    STRGT R6,[R3,#4]
+
+    ADD R2,R2,#1
+    B INNERLOOP
+
+NEXT_OUTER:
+    ADD R0,R0,#1
+    B LOOP
+
+ADDRESS:
+    STMFD R13!,{R0,R2,LR}
+    ADD R3,R1,R2,LSL #2
+    LDMFD R13!,{R0,R2,LR}
+    MOV PC,LR
+
+EXIT:
+    SWI 0x11
+.END

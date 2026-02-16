@@ -1,0 +1,24 @@
+.DATA
+A: .WORD 0
+
+.TEXT
+
+MOV R2,#5
+MOV R0,#0
+MOV R1,#1
+LDR R4,=A
+STR R0,[R4],#4
+STR R1,[R4],#4
+
+LOOP:
+    ADD R3,R1,R0
+    STR R3,[R4],#4
+    MOV R0,R1
+    MOV R1,R3
+    SUB R2,R2,#1
+    CMP R2,#0
+    BNE LOOP
+
+SWI 0x11
+
+.END

@@ -1,0 +1,28 @@
+.DATA
+FIB: .WORD 0,0,0,0,0
+
+.TEXT
+LDR R4, =FIB
+MOV R2, #10
+MOV R0, #0
+MOV R1, #1
+
+STMFD SP!, {R0,R1}
+STR R0, [R4], #4
+STR R1, [R4], #4
+
+SUB R2, R2, #2
+
+LOOP:
+    ADD R3, R0, R1
+    MOV R0, R1
+    MOV R1, R3
+
+    STMFD SP!, {R3}
+    STR R3, [R4], #4
+
+    SUBS R2, R2, #1
+    BNE LOOP
+
+SWI 0x11
+.END

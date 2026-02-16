@@ -1,0 +1,20 @@
+.DATA 
+A: .ASCIZ "HARSHITCHANDAK"
+COUNT: .WORD 0
+
+.TEXT
+LDR R0,=A
+MOV R3,#0
+
+LOOP:
+    LDRB R1,[R0],#1
+    CMP R1,#0
+    BEQ EXIT
+    ADD R3,R3,#1
+    BNE LOOP
+   
+EXIT:
+    LDR R2,=COUNT
+    STR R3,[R2]
+    SWI 0x11
+.END
