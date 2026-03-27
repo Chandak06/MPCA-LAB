@@ -1,0 +1,38 @@
+1. VCC TO 5V 
+2. GND TO GND
+3. DO TO PIN 3
+
+#define LDR 3      // DO pin of LDR module
+#define LED 13     // LED pin (can also use external LED)
+
+bool headlightsOn = false;
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(LDR, INPUT);
+  pinMode(LED, OUTPUT);
+}
+
+void loop() {
+
+  int lightState = digitalRead(LDR);
+
+  Serial.print("LDR State: ");
+  Serial.println(lightState);
+
+  // 🌙 DARK → LED ON
+  if (!headlightsOn && lightState == 1) {
+    headlightsOn = true;
+    digitalWrite(LED, HIGH);
+    Serial.println("DARK → HEADLIGHT ON");
+  }
+
+  // ☀️ BRIGHT → LED OFF
+  else if (headlightsOn && lightState == 0) {
+    headlightsOn = false;
+    digitalWrite(LED, LOW);
+    Serial.println("BRIGHT → HEADLIGHT OFF");
+  }
+
+  delay(200);
+}

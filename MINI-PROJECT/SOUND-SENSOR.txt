@@ -1,0 +1,120 @@
+1. + TO 5V
+2. G TO GND 
+3. DO TO PIN 2
+4. VO TO LEAVE IT
+
+#define SOUND 2   // DO pin
+
+// Motor pins (L298N)
+#define ENA 5
+#define IN1 6
+#define IN2 7
+#define IN3 8
+#define IN4 9
+#define ENB 10
+
+int clapCount = 0;
+unsigned long lastClapTime = 0;
+unsigned long inputWindow = 2000;
+
+unsigned long lastTriggerTime = 0;
+unsigned long debounceDelay = 400;
+
+bool clapDetected = false;
+
+enum Command {STOP, FORWARD, BACKWARD, LEFT, RIGHT};
+Command currentCommand = STOP;
+
+void setup() {
+  Serial.begin(9600);
+
+  pinMode(SOUND, INPUT);
+
+  pinMode(ENA, OUTPUT);
+  pinMode(IN1, OUTPUT);
+  pinMode(IN2, OUTPUT);
+  pinMode(IN3, OUTPUT);
+  pinMode(IN4, OUTPUT);
+  pinMode(ENB, OUTPUT);
+
+  Serial.println("System Ready...");
+  delay(3000);
+}
+
+// ===== MOTOR FUNCTIONS =====
+void moveForward() {
+  digitalWrite(IN1, HIGH); digitalWrite(IN2, LOW);
+  digitalWrite(IN3, HIGH); digitalWrite(IN4, LOW);
+}
+
+void moveBackward() {
+  digitalWrite(IN1, LOW); digitalWrite(IN2, HIGH);
+  digitalWrite(IN3, LOW); digitalWrite(IN4, HIGH);
+}
+
+void turnLeft() {
+  digitalWrite(IN1, LOW); digitalWrite(IN2, HIGH);
+  digitalWrite(IN3, HIGH); digitalWrite(IN4, LOW);
+}
+
+void turnRight() {
+  digitalWrite(IN1, HIGH); digitalWrite(IN2, LOW);
+  digitalWrite(IN3, LOW); digitalWrite(IN4, HIGH);
+}
+
+void stopCar() {
+  digitalWrite(IN1, LOW); digitalWrite(IN2, LOW);
+  digitalWrite(IN3, LOW); digitalWrite(IN4, LOW);
+}
+
+void loop() {
+
+  int soundState = digitalRead(SOUND);
+
+  // 👏 Clap detection
+  if (soundState == HIGH && !clapDetected && (millis() - lastTriggerTime > debounceDelay)) {
+
+    clapDetected = true;
+    lastTriggerTime = millis();
+
+    clapCount++;
+    lastClapTime = millis();
+
+    Serial.print("Clap: ");
+    Serial.println(clapCount);
+  }
+
+  if (soundState == LOW) {
+    clapDetected = false;
+  }
+
+  // ⏱ Process after 2 sec silence
+  if (clapCount > 0 && (millis() - lastClapTime > inputWindow)) {
+
+    Serial.print("Final Claps: ");
+    Serial.println(clapCount);
+
+    switch (clapCount) {
+      case 1: currentCommand = FORWARD; break;
+      case 2: currentCommand = BACKWARD; break;
+      case 3: currentCommand = LEFT; break;
+      case 4: currentCommand = RIGHT; break;
+      case 5: currentCommand = STOP; break;
+      default: Serial.println("Invalid command");
+    }
+
+    clapCount = 0;
+  }
+
+  // 🚗 EXECUTE MOTOR COMMANDS CONTINUOUSLY
+  switch (currentCommand) {
+    case FORWARD: moveForward(); break;
+    case BACKWARD: moveBackward(); break;
+    case LEFT: turnLeft(); break;
+    case RIGHT: turnRight(); break;
+    case STOP: stopCar(); break;
+  }
+
+  delay(50);
+}
+
