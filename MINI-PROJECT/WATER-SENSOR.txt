@@ -3,12 +3,16 @@
 3. AO TO A1
 4. DO TO LEAVE IT
 
-#define waterSensor A0   // Analog pin
+
+#define waterSensor A0
+#define ledPin 7
 
 int value = 0;
+int threshold = 300;  // You will tune this
 
 void setup() {
   Serial.begin(9600);
+  pinMode(ledPin, OUTPUT);
 }
 
 void loop() {
@@ -17,6 +21,11 @@ void loop() {
   Serial.print("Water Sensor Value: ");
   Serial.println(value);
 
-  delay(500);
-}
+  if (value > threshold) {
+    digitalWrite(ledPin, HIGH);  // LED ON
+  } else {
+    digitalWrite(ledPin, LOW);   // LED OFF
+  }
 
+  delay(200);
+}
