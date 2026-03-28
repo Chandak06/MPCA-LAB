@@ -1,0 +1,174 @@
+1. GND TO GND
+2. 5V TO 5V
+3. OUT TO PIN 2
+
+
+// =============================================
+//   POTHOLE DETECTION SYSTEM - FINAL CODE
+//   Sensor: FC-51 IR
+//   Board:  Arduino UNO
+// =============================================
+
+#define IR_SENSOR 2   // OUT → D2
+#define BUZZER    8   // Optional buzzer → D8 (remove if not using)
+#define LED_PIN   13  // Onboard LED alert
+
+// =============================================
+//   SETTINGS
+// =============================================
+// CONFIRM_READS: Consecutive HIGH reads to confirm pothole
+//   2 = Sensitive   (small potholes, might false trigger)
+//   3 = Normal      ← DEFAULT
+//   5 = Strict      (deep/wide potholes only)
+#define CONFIRM_READS 3
+
+// ALERT_COOLDOWN: Minimum ms between repeated alerts
+//   2000 = 2 seconds ← DEFAULT
+#define ALERT_COOLDOWN 2000
+
+// STATUS_INTERVAL: How often live status prints (ms)
+//   1000 = every 1 second ← DEFAULT
+#define STATUS_INTERVAL 1000
+// =============================================
+
+int highReadCount = 0;
+bool potholeActive = false;
+bool lastPotholeState = false;
+bool running = true;
+
+unsigned long lastAlertTime = 0;
+unsigned long lastStatusTime = 0;
+int totalPotholes = 0;
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(IR_SENSOR, INPUT);
+  pinMode(LED_PIN, OUTPUT);
+  pinMode(BUZZER, OUTPUT);
+
+  digitalWrite(LED_PIN, LOW);
+  digitalWrite(BUZZER, LOW);
+
+  delay(1000);  // Sensor stabilize
+
+  Serial.println("=================================");
+  Serial.println("   Pothole Detection System");
+  Serial.println("   FC-51 IR | Range: ~20cm");
+  Serial.println("=================================");
+  Serial.print("Confirm reads:   "); Serial.println(CONFIRM_READS);
+  Serial.print("Alert cooldown:  "); Serial.print(ALERT_COOLDOWN / 1000); Serial.println("s");
+  Serial.println("---------------------------------");
+  Serial.println("Commands: 'stop' 'start' 'count' 'reset'");
+  Serial.println("=================================");
+  Serial.println("Scanning...");
+}
+
+void triggerAlert() {
+  totalPotholes++;
+
+  Serial.println("=========================================");
+  Serial.println("  !! ALERT: POTHOLE DETECTED AHEAD !!  ");
+  Serial.print  ("     Total potholes found: ");
+  Serial.println(totalPotholes);
+  Serial.println("=========================================");
+
+  // Buzzer + LED alert pattern
+  for (int i = 0; i < 3; i++) {
+    digitalWrite(LED_PIN, HIGH);
+    digitalWrite(BUZZER, HIGH);
+    delay(150);
+    digitalWrite(LED_PIN, LOW);
+    digitalWrite(BUZZER, LOW);
+    delay(100);
+  }
+}
+
+void clearAlert() {
+  digitalWrite(LED_PIN, LOW);
+  digitalWrite(BUZZER, LOW);
+  Serial.println(">> Road clear.");
+}
+
+void handleCommands() {
+  if (Serial.available() > 0) {
+    String cmd = Serial.readStringUntil('\n');
+    cmd.trim();
+    cmd.toLowerCase();
+
+    if (cmd == "stop") {
+      running = false;
+      digitalWrite(LED_PIN, LOW);
+      digitalWrite(BUZZER, LOW);
+      Serial.println("Detection STOPPED. Type 'start' to resume.");
+
+    } else if (cmd == "start") {
+      running = true;
+      highReadCount = 0;
+      potholeActive = false;
+      lastPotholeState = false;
+      Serial.println("Detection STARTED. Scanning...");
+
+    } else if (cmd == "count") {
+      Serial.print("Total potholes detected: ");
+      Serial.println(totalPotholes);
+
+    } else if (cmd == "reset") {
+      totalPotholes = 0;
+      highReadCount = 0;
+      potholeActive = false;
+      lastPotholeState = false;
+      Serial.println("Counter reset to 0.");
+    }
+  }
+}
+
+void loop() {
+
+  handleCommands();
+
+  if (!running) {
+    delay(50);
+    return;
+  }
+
+  int sensorState = digitalRead(IR_SENSOR);
+  unsigned long now = millis();
+
+  // Confirm pothole with consecutive HIGH reads
+  // FC-51: HIGH = no surface detected = pothole/drop
+  if (sensorState == HIGH) {
+    highReadCount++;
+  } else {
+    highReadCount = 0;
+  }
+
+  potholeActive = (highReadCount >= CONFIRM_READS);
+
+  // Pothole newly detected
+  if (potholeActive && !lastPotholeState) {
+    if (now - lastAlertTime > ALERT_COOLDOWN) {
+      lastAlertTime = now;
+      triggerAlert();
+    }
+  }
+
+  // Road returned to clear
+  if (!potholeActive && lastPotholeState) {
+    clearAlert();
+  }
+
+  lastPotholeState = potholeActive;
+
+  // Live status every STATUS_INTERVAL ms
+  if (now - lastStatusTime >= STATUS_INTERVAL) {
+    lastStatusTime = now;
+    Serial.print("[SCAN] ");
+    Serial.print(sensorState == LOW ? "LOW  " : "HIGH ");
+    Serial.print(" | ");
+    Serial.print(potholeActive ? "POTHOLE" : "Clear  ");
+    Serial.print(" | Total: ");
+    Serial.println(totalPotholes);
+  }
+
+  delay(20);  // 20ms polling = fast response
+}

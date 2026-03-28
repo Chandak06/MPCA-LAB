@@ -2,13 +2,13 @@
 2. GND TO GND
 3. AO TO A1
 4. DO TO LEAVE IT
+5. LED PIN 8
 
-
-#define waterSensor A0
-#define ledPin 7
+#define waterSensor A1
+#define ledPin 8
 
 int value = 0;
-int threshold = 300;  // You will tune this
+int threshold = 500;  // You will tune this
 
 void setup() {
   Serial.begin(9600);
@@ -17,11 +17,11 @@ void setup() {
 
 void loop() {
   value = analogRead(waterSensor);
-
+  
   Serial.print("Water Sensor Value: ");
   Serial.println(value);
 
-  if (value > threshold) {
+  if (value < threshold) {
     digitalWrite(ledPin, HIGH);  // LED ON
   } else {
     digitalWrite(ledPin, LOW);   // LED OFF

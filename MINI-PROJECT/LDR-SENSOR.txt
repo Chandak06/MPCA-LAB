@@ -1,6 +1,8 @@
 1. VCC TO 5V 
 2. GND TO GND
 3. DO TO PIN 3
+4. LED 13
+
 #define LDR 3      
 #define LED 13     
 
