@@ -1,0 +1,194 @@
+// =========================================================
+// MINI PROJECT - MERGED FINAL CODE
+// Includes:
+// 1) IR Sensor (pothole/drop style digital detect)
+// 2) LDR Sensor (day/night headlight indicator)
+// 3) Ultrasonic Sensor (obstacle distance safety)
+// 4) Water Sensor (water detection safety)
+// 5) L298N Motor Driver (car movement)
+// Board: Arduino UNO
+// =========================================================
+
+// ---------------- MOTOR MODULE (L298N) ----------------
+#define ENA 5
+#define ENB 6
+#define IN1 8
+#define IN2 9
+#define IN3 10
+#define IN4 11
+
+int motorSpeed = 190;  // 0 to 255
+
+// ---------------- SENSOR PINS ----------------
+#define IR_SENSOR_PIN 2
+#define LDR_PIN 4
+
+#define TRIG_PIN 12
+#define ECHO_PIN 7
+
+#define WATER_SENSOR_PIN A1
+
+#define STATUS_LED 13
+
+// ---------------- TUNING ----------------
+const int OBSTACLE_CM = 20;         // Stop if object is closer than this
+const int WATER_THRESHOLD = 500;    // Tune using Serial monitor
+
+const unsigned long STATUS_PRINT_MS = 500;
+
+// ---------------- DRIVE MODES ----------------
+enum DriveCommand {
+	CMD_STOP,
+	CMD_FORWARD,
+	CMD_BACKWARD,
+	CMD_LEFT,
+	CMD_RIGHT
+};
+
+DriveCommand currentCommand = CMD_STOP;
+
+// ---------------- RUNTIME STATE ----------------
+unsigned long lastStatusTime = 0;
+long distanceCm = 999;
+int waterValue = 0;
+int irState = LOW;
+int ldrState = LOW;
+
+// ---------------- MOTOR FUNCTIONS ----------------
+void setMotorSpeed(int speedValue) {
+	analogWrite(ENA, speedValue);
+	analogWrite(ENB, speedValue);
+}
+
+void moveForward() {
+	digitalWrite(IN1, HIGH); digitalWrite(IN2, LOW);
+	digitalWrite(IN3, HIGH); digitalWrite(IN4, LOW);
+	setMotorSpeed(motorSpeed);
+}
+
+void moveBackward() {
+	digitalWrite(IN1, LOW); digitalWrite(IN2, HIGH);
+	digitalWrite(IN3, LOW); digitalWrite(IN4, HIGH);
+	setMotorSpeed(motorSpeed);
+}
+
+void turnLeft() {
+	digitalWrite(IN1, LOW); digitalWrite(IN2, HIGH);
+	digitalWrite(IN3, HIGH); digitalWrite(IN4, LOW);
+	setMotorSpeed(motorSpeed);
+}
+
+void turnRight() {
+	digitalWrite(IN1, HIGH); digitalWrite(IN2, LOW);
+	digitalWrite(IN3, LOW); digitalWrite(IN4, HIGH);
+	setMotorSpeed(motorSpeed);
+}
+
+void stopMotors() {
+	digitalWrite(IN1, LOW); digitalWrite(IN2, LOW);
+	digitalWrite(IN3, LOW); digitalWrite(IN4, LOW);
+}
+
+// ---------------- SENSOR HELPERS ----------------
+long readDistanceCm() {
+	digitalWrite(TRIG_PIN, LOW);
+	delayMicroseconds(2);
+
+	digitalWrite(TRIG_PIN, HIGH);
+	delayMicroseconds(10);
+	digitalWrite(TRIG_PIN, LOW);
+
+	long duration = pulseIn(ECHO_PIN, HIGH, 30000);  // 30ms timeout
+	if (duration == 0) {
+		return 999; // No valid echo
+	}
+	return (duration * 0.034) / 2;
+}
+
+void executeDriveCommand() {
+	switch (currentCommand) {
+		case CMD_FORWARD:  moveForward(); break;
+		case CMD_BACKWARD: moveBackward(); break;
+		case CMD_LEFT:     turnLeft(); break;
+		case CMD_RIGHT:    turnRight(); break;
+		case CMD_STOP:     stopMotors(); break;
+	}
+}
+
+void setup() {
+	Serial.begin(9600);
+
+	pinMode(ENA, OUTPUT);
+	pinMode(ENB, OUTPUT);
+	pinMode(IN1, OUTPUT);
+	pinMode(IN2, OUTPUT);
+	pinMode(IN3, OUTPUT);
+	pinMode(IN4, OUTPUT);
+
+	pinMode(IR_SENSOR_PIN, INPUT);
+	pinMode(LDR_PIN, INPUT);
+	pinMode(TRIG_PIN, OUTPUT);
+	pinMode(ECHO_PIN, INPUT);
+
+	pinMode(STATUS_LED, OUTPUT);
+
+	stopMotors();
+	digitalWrite(STATUS_LED, LOW);
+
+	Serial.println("========================================");
+	Serial.println("Merged sensor + motor system started");
+	Serial.println("Safety: obstacle, water, IR hazard");
+	Serial.println("========================================");
+}
+
+void loop() {
+	// Read all sensors
+	irState = digitalRead(IR_SENSOR_PIN);
+	ldrState = digitalRead(LDR_PIN);
+	waterValue = analogRead(WATER_SENSOR_PIN);
+	distanceCm = readDistanceCm();
+
+	// LDR logic: use onboard LED as "headlight" indicator
+	// LDR module in your file: HIGH means dark
+	if (ldrState == HIGH) {
+		digitalWrite(STATUS_LED, HIGH);
+	} else {
+		digitalWrite(STATUS_LED, LOW);
+	}
+
+	// Safety layer has higher priority than drive command
+	bool obstacleDetected = (distanceCm > 0 && distanceCm < OBSTACLE_CM);
+	bool waterDetected = (waterValue < WATER_THRESHOLD);
+	bool irHazard = (irState == HIGH);
+
+	if (obstacleDetected || waterDetected || irHazard) {
+		stopMotors();
+	} else {
+		executeDriveCommand();
+	}
+
+	// Status print (non-blocking)
+	if (millis() - lastStatusTime >= STATUS_PRINT_MS) {
+		lastStatusTime = millis();
+		Serial.print("IR:");
+		Serial.print(irState);
+		Serial.print(" | LDR:");
+		Serial.print(ldrState);
+		Serial.print(" | Dist(cm):");
+		Serial.print(distanceCm);
+		Serial.print(" | Water:");
+		Serial.print(waterValue);
+		Serial.print(" | Safety:");
+		Serial.print((obstacleDetected || waterDetected || irHazard) ? "ON" : "OFF");
+		Serial.print(" | Cmd:");
+		switch (currentCommand) {
+			case CMD_FORWARD:  Serial.println("FORWARD"); break;
+			case CMD_BACKWARD: Serial.println("BACKWARD"); break;
+			case CMD_LEFT:     Serial.println("LEFT"); break;
+			case CMD_RIGHT:    Serial.println("RIGHT"); break;
+			case CMD_STOP:     Serial.println("STOP"); break;
+		}
+	}
+
+	delay(20);
+}
